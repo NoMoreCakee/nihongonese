@@ -7,7 +7,7 @@ from discord.ext import commands
 
 dotenv.load_dotenv()
 
-prefix = "::"
+prefix = input("Enter a command prefix: ")
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix=prefix, intents=intents)

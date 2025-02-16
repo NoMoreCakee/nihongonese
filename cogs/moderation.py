@@ -17,6 +17,11 @@ class Moderation(commands.Cog):
     @commands.command()
     async def kick(self, ctx: commands.context.Context, user_id, reason=None):
         """Allows for kicking a user"""
+
+        if not ctx.author.guild_permissions.kick_members:
+            await ctx.send("You have no permissions to perform this.")
+            return
+
         user_id = self.strip_id(user_id)
 
         user = await ctx.guild.fetch_member(user_id)
@@ -32,9 +37,15 @@ class Moderation(commands.Cog):
             if not reason: await ctx.send(f"Successfully kicked {globalname}.")
             else: await ctx.send(f"Successfully kicked {globalname} with the reason: \"{reason}\"")
 
+
     @commands.command()
     async def ban(self, ctx: commands.context.Context, user_id, reason=None):
         """Allows for banning a user"""
+
+        if not ctx.author.guild_permissions.ban_members:
+            await ctx.send("You have no permissions to perform this.")
+            return
+
         user_id = self.strip_id(user_id)
         print(user_id)
 
@@ -55,6 +66,11 @@ class Moderation(commands.Cog):
     @commands.command()
     async def unban(self, ctx: commands.context.Context, user_id):
         """Allows for unbanning a user"""
+
+        if not ctx.author.guild_permissions.ban_members:
+            await ctx.send("You have no permissions to perform this.")
+            return
+
         user_id = self.strip_id(user_id)
         user = await self.bot.fetch_user(user_id)
         globalname = user.name

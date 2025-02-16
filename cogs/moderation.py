@@ -10,11 +10,12 @@ class Moderation(commands.Cog):
         if user_id[:2] == "<@" and user_id[-1] == ">": return user_id[2:-1]
         else: return user_id
 
-    @commands.command()
+    @commands.hybrid_command(name="hello", description="Checks bot connectivity.")
     async def hello(self, ctx: commands.context.Context):
+        """Shows this message."""
         await ctx.send("Hello, world!")
 
-    @commands.command()
+    @commands.hybrid_command(name="kick", description="Kicks a user.")
     async def kick(self, ctx: commands.context.Context, user_id, reason=None):
         """Allows for kicking a user"""
 
@@ -37,8 +38,7 @@ class Moderation(commands.Cog):
             if not reason: await ctx.send(f"Successfully kicked {globalname}.")
             else: await ctx.send(f"Successfully kicked {globalname} with the reason: \"{reason}\"")
 
-
-    @commands.command()
+    @commands.hybrid_command(name="ban", description="Bans a user.")
     async def ban(self, ctx: commands.context.Context, user_id, reason=None):
         """Allows for banning a user"""
 
@@ -63,7 +63,7 @@ class Moderation(commands.Cog):
             if not reason: await ctx.send(f"Successfully banned {globalname}.")
             else: await ctx.send(f"Successfully banned {globalname} with the reason: \"{reason}\"")
 
-    @commands.command()
+    @commands.hybrid_command(name="unban", description="Unbans a user.")
     async def unban(self, ctx: commands.context.Context, user_id):
         """Allows for unbanning a user"""
 
@@ -82,6 +82,23 @@ class Moderation(commands.Cog):
         except HTTPException: await ctx.send("Unbanning failed. Possibly server error.")
 
         else: await ctx.send(f"Successfully unbanned {globalname}.")
+
+    @commands.hybrid_command(name="purge", description="Mass deletes up to a 100 messages. Messages must be sent within 2 weeks.")
+    async def purge(self, ctx: commands.context.Context, amount: int):
+        """Mass deletes up to a 100 messages. Messages must be sent within 2 weeks."""
+        if not ctx.author.guild_permissions.manage_messages:
+            await ctx.send("You have no permissions to perform this.")
+            return
+        
+        if not amount:
+            await ctx.send("Please provide an amount.")
+            return
+        
+        if amount > 100:
+            await ctx.send("Limit is 100 messages.\nDeleting 100 messages...")
+            amount = 99
+
+        await ctx.channel.purge(limit=amount)
 
 async def setup(bot):
     await bot.add_cog(Moderation(bot))

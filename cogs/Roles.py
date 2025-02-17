@@ -9,14 +9,17 @@ class Roles(commands.Cog):
     @commands.hybrid_group(name="role")
     async def role(self, ctx: commands.context.Context):
         if ctx.invoked_subcommand is None:
-            ctx.send("That argument doesn't exist for roles.")
+            self.embed.title = ":x: Error!"
+            self.embed.description = "Invalid argument, if any."
+            self.embed.color = Color.red()
+            await ctx.send(embed=self.embed)
 
     @role.command()
     async def list(self, ctx: commands.context.Context):
         roles = ctx.guild.roles
         roles_str = "\n".join(role.name for role in roles)
         self.embed.title = "Roles"
-        self.embed.color = Color.default()
+        self.embed.color = Color.blue()
         self.embed.description = f"{roles_str}"
         await ctx.send(embed=self.embed)
 

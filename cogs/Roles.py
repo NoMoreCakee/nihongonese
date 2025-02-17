@@ -24,7 +24,15 @@ class Roles(commands.Cog):
         await ctx.send(embed=self.embed)
 
     @role.command()
-    async def add(self, ctx: commands.context.Context, rolename: str):
+    async def add(self, ctx: commands.context.Context, rolename: str=None):
+
+        if rolename is None:
+            self.embed.title = ":x: Error!"
+            self.embed.description = "The provided input is invalid."
+            self.embed.color = Color.red()
+            await ctx.send(embed=self.embed)
+            return
+
         try:
             guild_role = await ctx.guild.create_role(name=rolename)   
 

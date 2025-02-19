@@ -46,22 +46,27 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command(name="hello", description="Checks bot connectivity.")
     async def hello(self, ctx: commands.Context):
+        """Test command for checking bot status."""
         await self.send_embed(ctx, "Hello there!", "I'm working!", Color.blue())
 
     @commands.hybrid_command(name="kick", description="Kicks a user.")
     async def kick(self, ctx: commands.Context, user_id=None, reason=None):
+        """Kicks a user from the server."""
         await self.perform_action(ctx, "kick", "kicked", user_id, reason)
 
     @commands.hybrid_command(name="ban", description="Bans a user.")
     async def ban(self, ctx: commands.Context, user_id=None, reason=None):
+        """Bans a user from the server."""
         await self.perform_action(ctx, "ban", "banned", user_id, reason)
 
     @commands.hybrid_command(name="unban", description="Unbans a user.")
     async def unban(self, ctx: commands.Context, user_id=None):
+        """Unbans a user from the server."""
         await self.perform_action(ctx, "unban", "unbanned", user_id)
 
     @commands.hybrid_command(name="purge", description="Mass deletes up to 100 messages.")
     async def purge(self, ctx: commands.Context, amount: int):
+        """Mass deletes up to 100 messages in current channel."""
         if not ctx.author.guild_permissions.manage_messages:
             return await self.send_embed(ctx, ":x: Error!", "You don't have permission to perform this action.",
                                          Color.red())

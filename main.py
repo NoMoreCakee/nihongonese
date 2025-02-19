@@ -11,7 +11,10 @@ dotenv.load_dotenv()
 prefix = input("Enter a command prefix: ")
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix=prefix, intents=intents)
+
+WELCOME_CHANNEL = int(dotenv.get_key('.env', 'CHANNEL_ID'))
 
 async def load_cogs():
     for filename in os.listdir("./cogs"):
@@ -22,7 +25,18 @@ async def load_cogs():
 async def on_ready():
     print(f"Logged in as: {bot.user}!")
     await bot.tree.sync()
+    print(WELCOME_CHANNEL)
 
+@bot.event
+async def on_member_join(member: discord.Member):
+    channel=bot.get_channel(WELCOME_CHANNEL)
+
+    if not channel:
+        print("Channel not found")
+        return
+
+    embed=Embed(title="New Member!", description=f"Welcome {member.mention} to Nihonhonese! Nice to have you here!", color=Color.blue())
+    await channel.send(embed=embed)
 
 # I don't want to make a new cog just for this command :3 - Cake
 

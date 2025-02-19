@@ -36,12 +36,12 @@ class Moderation(commands.Cog):
             await self.send_embed(ctx, ":white_check_mark: Success!", success_msg, Color.green())
 
         except Forbidden:
-            await self.send_embed(ctx, ":x: Error!", f"I don't have permission to {action_name} this member.",
+            await self.send_embed(ctx, ":x: Error!", f"I don't have permission to {action} this member.",
                                   Color.red())
         except NotFound:
             await self.send_embed(ctx, ":x: Error!", "User not found or does not exist in the server.", Color.red())
         except HTTPException:
-            await self.send_embed(ctx, ":x: Error!", f"Failed to {action_name} member. Possibly a server error.",
+            await self.send_embed(ctx, ":x: Error!", f"Failed to {action} the member. Possibly a server error.",
                                   Color.red())
 
     @commands.hybrid_command(name="hello", description="Checks bot connectivity.")

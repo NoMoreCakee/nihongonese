@@ -1,5 +1,5 @@
 from discord.ext import commands
-from discord import Embed, Forbidden, HTTPException, NotFound, Color
+from discord import Embed, Forbidden, HTTPException, NotFound, Color, Message
 import time
 
 
@@ -75,7 +75,7 @@ class Moderation(commands.Cog):
             return await self.send_embed(ctx, ":x: Error!", "Please provide a valid amount (1-100).", Color.red())
 
         await ctx.channel.purge(limit=amount)
-        msg = await self.send_embed(ctx, ":white_check_mark: Success!", f"Successfully deleted {amount} messages.",
+        msg: Message = await self.send_embed(ctx, ":white_check_mark: Success!", f"Successfully deleted {amount} messages.",
                                     Color.green())
         time.sleep(3)
         await msg.delete()

@@ -1,4 +1,7 @@
+# general
 audioop-lts==0.2.1
 discord.py==2.4.0
 python-dotenv==1.0.1
+
+# Jisho.py
 git+https://github.com/JustOden/jisho-api.git

@@ -11,20 +11,20 @@ class TicketsView(View):
     def __init__(self, ctx):
         super().__init__()
         self.ctx = ctx
+        self.ticket_category = None
 
     async def interaction_check(self, interaction: Interaction):
         if not self.verified_role in interaction.user.roles:
-            interaction.response.send_message("Only verified members can request a ticket. If you have problem getting verified, please DM a staff member.")
+            await interaction.response.send_message("Only verified members can request a ticket. If you have problem getting verified, please DM a staff member.", ephemeral=True)
             return False
         return True
     
     async def on_timeout(self):
         await self.message.edit(view=None)
 
-    async def send(self, role: Role):
+    async def send(self, role: Role, channel: TextChannel):
         self.verified_role = role
-        print(self.verified_role)
-        self.message = await self.ctx.send(embed=self.create_embed(), view=self)
+        self.message = await channel.send(embed=self.create_embed(), view=self)
 
     def create_embed(self):
         return Embed(
@@ -34,9 +34,9 @@ class TicketsView(View):
         )
 
     @discord.ui.button(label="Create Ticket", style=ButtonStyle.primary)
-    async def create_ticket(self, interaction: Interaction, button: Button, category: discord.CategoryChannel):
+    async def create_ticket(self, interaction: Interaction, button: Button):
         await interaction.response.defer()
-        await category.create_text_channel(name=f"ticket-{interaction.user.name}")
+        await self.ticket_category.create_text_channel(name=f"ticket-{interaction.user.name}")
 
 
 class Tickets(commands.Cog):
@@ -156,11 +156,17 @@ class Tickets(commands.Cog):
 
             ticket_view = TicketsView(ctx=ctx)
             print("ticket view")
-            await ticket_view.send(verified_role)
+            await ticket_view.send(verified_role, ticket_channel)
+            ticket_view.ticket_category = category
             print("ticket sent")
-            await ticket_view.create_ticket()
-            print("ticket created")
 
+            await ctx.send(
+                embed=Embed(
+                    title=":white_check_mark: Success!",
+                    description="Tickets are successfully set up.",
+                    color=Color.green()
+                )
+            )
     
 async def setup(bot: commands.Bot):
     await bot.add_cog(Tickets(bot))

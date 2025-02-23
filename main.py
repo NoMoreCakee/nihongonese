@@ -31,6 +31,7 @@ async def on_ready():
     else:
         print(f"Synced {len(synced)} slash command(s)")
 
+
 @bot.event
 async def on_member_join(member: discord.Member):
     channel=bot.get_channel(WELCOME_CHANNEL)

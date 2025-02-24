@@ -1,17 +1,60 @@
 import dotenv
 import discord
 from discord.ext import commands
-from discord import Color, Embed, Forbidden, HTTPException, TextChannel, PermissionOverwrite, Role, ButtonStyle, Message, utils, Interaction
+from discord import Color, Embed, Forbidden, HTTPException, TextChannel, PermissionOverwrite, Role, ButtonStyle, utils, Interaction
 from discord.ui import Button, View
+
+import asyncio
 
 dotenv.load_dotenv()
 
+class TicketMessageView(View):
+    def __init__(self, ctx: commands.Context, ticket_author: discord.Member):
+        super().__init__()
+        self.ctx = ctx
+        self.ticket_author = ticket_author
+
+    def get_role(self, role_name):
+        return utils.get(self.ctx.guild.roles, name=role_name)
+
+    async def interaction_check(self, interaction: Interaction):
+        if not self.get_role('Ticket') in interaction.user.roles or self.ticket_author != interaction.user:
+            await interaction.response.send_message("Only the creator of the ticket or users with the Ticket role are able to close tickets.")
+            return False
+        return True
+
+    async def on_timeout(self):
+        return await self.message.edit(view=None)
+
+    async def send(self, channel: TextChannel):
+        self.ticket_channel = channel
+        self.message = await channel.send(embed=self.create_embed(), view=self)
+
+    def create_embed(self):
+        return Embed(
+            title=":white_check_mark: Success!",
+            description="Your ticket is successfully created! You can now talk with the staff team privately.",
+            color=Color.green()
+        )
+
+    @discord.ui.button(label="Close Ticket", style=ButtonStyle.danger)
+    async def close_ticket(self, interaction: Interaction, button: Button):
+        await interaction.response.defer()
+        await self.ticket_channel.send(embed=Embed(
+            title=":information_source: Closing Ticket!",
+            description="This channel will be deleted in 5 seconds...",
+            color=Color.blue()
+        ))
+
+        await asyncio.sleep(5)
+
+        await self.ticket_channel.delete()
 
 class TicketsView(View):
     def __init__(self, ctx):
         super().__init__()
         self.ctx = ctx
-        self.ticket_category = None
+        self.ticket_category: discord.CategoryChannel = None
 
     async def interaction_check(self, interaction: Interaction):
         if not self.verified_role in interaction.user.roles:
@@ -36,7 +79,11 @@ class TicketsView(View):
     @discord.ui.button(label="Create Ticket", style=ButtonStyle.primary)
     async def create_ticket(self, interaction: Interaction, button: Button):
         await interaction.response.defer()
-        await self.ticket_category.create_text_channel(name=f"ticket-{interaction.user.name}")
+        new_ticket_channel: discord.TextChannel = await self.ticket_category.create_text_channel(name=f"ticket-{interaction.user.name}")
+
+
+        ticket_view = TicketMessageView(ctx=self.ctx, ticket_author=interaction.user)
+        await ticket_view.send(new_ticket_channel)
 
 
 class Tickets(commands.Cog):

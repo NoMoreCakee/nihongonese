@@ -11,27 +11,14 @@ URL = "https://jisho.org/search/"
 
 
 def test():
-    text = input("Enter a word/phrase to search: ")
-
-    print(f"<------------Word search for for {text}------------>")
-    for word in Jisho.word_search(text):
-        print(word)
-        print("--end--")
-
-    print(f"<------------Examples search for {text}------------>")
-    for example in Jisho.examples_search(text):
-        print(example)
-        print("--end--")
-
-    print(f"<------------Kanji search for {text}------------>")
-    for kanji in Jisho.kanji_search(text):
-        print(kanji)
-        print("--end--")
-
-    print(f"<------------Token search for {text}------------>")
-    for token in Jisho.token_search(text):
-        print(token)
-        print("--end--")
+    # test to display how the text will be formatted on discord
+    all_cmds = ("word", "kanji", "examples", "token")
+    while (cmd:=input(f"Enter command option from {all_cmds}: ").lower()) in all_cmds:
+        while (text:=input(f"Enter {cmd} to search for or (b: back): ").lower()) != "b":
+            print(f"<------------{cmd.capitalize()} search for {text}------------>")
+            for result in getattr(Jisho, f"{cmd.lower()}_search")(text):
+                print(result)
+                print("--end--")
 
 
 class PageView(discord.ui.View):

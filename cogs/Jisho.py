@@ -1,5 +1,8 @@
+import sys
 import json
 import re
+import traceback
+
 import discord
 from discord.ext import commands
 from jisho_api.word import Word
@@ -43,12 +46,27 @@ class PageView(discord.ui.View):
     async def on_timeout(self) -> None:
         await self.message.edit(view=None)
 
+    async def on_command_error(self, ctx: commands.Context, error):
+        if isinstance(error, commands.MemberNotFound):
+            await ctx.send("I could not find member '{error.argument}'. Please try again", ephemeral=True)
+
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"'{error.param.name}' is a required argument.", ephemeral=True)
+
+        else:
+            print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
     async def send(self) -> None:
-        self.message = await self.ctx.send(view=self)
-        await self.update_message(self.data[:self.sep])
+        # try block to debug code
+        try:
+            self.message = await self.ctx.send(view=self)
+            await self.update_message(self.data[:self.sep])
+        except Exception as e:
+            print(e)
 
     def create_embed(self, data: list) -> discord.Embed:
-        url = URL+("%20".join(self.arg)) if " " in URL else URL + self.arg
+        url = URL + ("%20".join(self.arg.split()))
         embed = discord.Embed(title=self.arg, url=url, colour=discord.Colour.random())
 
         if len(self.data) > 1:
@@ -206,7 +224,7 @@ class Jisho(commands.Cog):
                 restrictions = "Only applies to " + join_c(_restrictions) if (_restrictions:=senses["restrictions"]) else ""
 
                 _see_also = "".join(senses["see_also"])
-                see_also_link = URL + ("%20".join(_see_also.split())) if " " in _see_also else URL + _see_also
+                see_also_link = URL + ("%20".join(_see_also.split()))
                 see_also = f"*see also [{_see_also}]({see_also_link})*" if _see_also else ""
 
                 info = join_c(_info) if (_info:=senses["info"]) else ""

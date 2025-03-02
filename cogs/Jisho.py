@@ -1,16 +1,11 @@
-import sys
 import json
 import re
-import traceback
-
 import discord
 from discord.ext import commands
 from jisho_api.word import Word
 from jisho_api.kanji import Kanji
 from jisho_api.sentence import Sentence
 from jisho_api.tokenize import Tokens
-
-URL = "https://jisho.org/search/"
 
 
 def test():
@@ -46,37 +41,23 @@ class PageView(discord.ui.View):
     async def on_timeout(self) -> None:
         await self.message.edit(view=None)
 
-    async def on_command_error(self, ctx: commands.Context, error):
-        if isinstance(error, commands.MemberNotFound):
-            await ctx.send("I could not find member '{error.argument}'. Please try again", ephemeral=True)
-
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f"'{error.param.name}' is a required argument.", ephemeral=True)
-
-        else:
-            print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-
     async def send(self) -> None:
-        # try block to debug code
-        try:
-            self.message = await self.ctx.send(view=self)
-            await self.update_message(self.data[:self.sep])
-        except Exception as e:
-            print(e)
+        self.message = await self.ctx.send(view=self)
+        await self.update_message(self.data[:self.sep])
 
     def create_embed(self, data: list) -> discord.Embed:
-        url = URL + ("%20".join(self.arg.split()))
+        url = Jisho.URL + ("%20".join(self.arg.split()))
         embed = discord.Embed(title=self.arg, url=url, colour=discord.Colour.random())
 
         if len(self.data) > 1:
-            for entry in data:
-                embed.add_field(name=f"Page {self.current_page} of {int(len(self.data) / self.sep)}", value=entry, inline=False)
-                embed.title = self.arg
+            name = f"Page {self.current_page} of {int(len(self.data) / self.sep)}"
+        
         else:
-            for entry in data:
-                embed.add_field(name="Result", value=entry, inline=False)
-                embed.title = self.arg
+            name = "Result"
+
+        for base in data:
+            embed.add_field(name=name, value=base, inline=False)
+            embed.title = self.arg
 
         return embed
 
@@ -184,6 +165,8 @@ class PageView(discord.ui.View):
 
 
 class Jisho(commands.Cog):
+    URL = "https://jisho.org/search/"
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -204,7 +187,6 @@ class Jisho(commands.Cog):
         add_i = lambda s: "*" + s + "*"
 
         for result in results:
-            entry = ""
             word = _word if (_word:=result["japanese"][0]["word"]) else result["japanese"][0]["reading"]
             reading = _reading if word and (_reading:=result["japanese"][0]["reading"]) else ""
 
@@ -213,7 +195,7 @@ class Jisho(commands.Cog):
             tags = join_c(_tags) if (_tags:=result["tags"]) else ""
             
             joined = add_nl(f"`{_joined}`") if (_joined:=join_c([i for i in (fq, jlpt, tags) if i])) else ""
-            entry += f"**{word}【{reading}】**{joined}\n"
+            base = f"**{word}【{reading}】**{joined}\n"
 
             for index, senses in enumerate(result["senses"], start=1):
                 parts_of_speech = add_nl(bold_i(join_c(_parts_of_speech))) if (_parts_of_speech:=senses["parts_of_speech"]) else ""
@@ -224,12 +206,12 @@ class Jisho(commands.Cog):
                 restrictions = "Only applies to " + join_c(_restrictions) if (_restrictions:=senses["restrictions"]) else ""
 
                 _see_also = "".join(senses["see_also"])
-                see_also_link = URL + ("%20".join(_see_also.split()))
+                see_also_link = Jisho.URL + ("%20".join(_see_also.split()))
                 see_also = f"*see also [{_see_also}]({see_also_link})*" if _see_also else ""
 
                 info = join_c(_info) if (_info:=senses["info"]) else ""
                 joined = add_nl(_joined) if (_joined:=join_c([i for i in (tags, restrictions, see_also, info) if i])) else ""
-                entry += f"{parts_of_speech}\n{index}. {english_definitions}{joined}"
+                base += f"{parts_of_speech}\n{index}. {english_definitions}{joined}"
 
                 if links:
                     list_ = []
@@ -240,25 +222,25 @@ class Jisho(commands.Cog):
                         text_url = f"[{text}]({url})"
                         list_.append(text_url)
                         
-                    entry += add_nl(add_i("\n".join(list_)))
+                    base += add_nl(add_i("\n".join(list_)))
                     
-                entry += "\n"
+                base += "\n"
 
-            if len(result["japanese"]) > 1:
+            if len(_japanese:=result["japanese"]) > 1:
                 list_ = []
                 
-                for dict_ in result["japanese"][1:]:
-                    otherword = _word if (_word:=dict_["word"]) else dict_["reading"]
-                    otherreading = f"【{dict_['reading']}】" if dict_["word"] else ""
-                    other_form = f"{otherword}{otherreading}"
+                for dict_ in _japanese[1:]:
+                    other_word = _word if (_word:=dict_["word"]) else dict_["reading"]
+                    other_reading = f"【{dict_['reading']}】" if dict_["word"] else ""
+                    other_form = f"{other_word}{other_reading}"
                     list_.append(other_form)
                     
-                entry += "\nOther forms\n" + "、".join(list_)
+                base += "\nOther forms\n" + "、".join(list_)
 
-            if len(entry) > 1015:
-                entry = entry[:1015] + " [...]"
+            if len(base) > 1015:
+                base = base[:1015] + " [...]"
 
-            data.append(entry)
+            data.append(base)
             
         return data
 
@@ -267,24 +249,6 @@ class Jisho(commands.Cog):
         # Regex pattern for Kanji (CJK Ideographs)
         kanji_pattern = re.compile(r'[\u4E00-\u9FFF]')
         return kanji_pattern.findall(arg)
-    
-    @staticmethod
-    def find_hiragana(arg: str) -> list:
-        # Regex pattern for Hiragana
-        hiragana_pattern = re.compile(r'[\u3040-\u309F]')
-        return hiragana_pattern.findall(arg)
-    
-    @staticmethod
-    def find_katakana(arg: str) -> list:
-        # Regex pattern for Katakana
-        katakana_pattern = re.compile(r'[\u30A0-\u30FF]')
-        return katakana_pattern.findall(arg)
-    
-    @staticmethod
-    def find_roman(arg: str) -> list:
-        # Regex pattern for Roman
-        roman_pattern = re.compile(r'[\u0061-\u007A]')
-        return roman_pattern.findall(arg)
 
     @staticmethod
     def kanji_search(arg: str) -> list:
@@ -298,20 +262,54 @@ class Jisho(commands.Cog):
         data = []
 
         for result in results:
-            entry = ""
-            kanji = result["data"]["kanji"]
+            kanji = "`Kanji`: " + result["data"]["kanji"]
             strokes = result["data"]["strokes"]
-            
-            main_meanings = result["data"]["main_meanings"]
-            kun_readings = result["data"]["main_readings"]["kun"]
-            on_readings = result["data"]["main_readings"]["on"]
+
+            main_meanings = "`Meanings`\n" + (", ".join(result["data"]["main_meanings"]))
+            kun_readings = "\n`Kun`\n" + ("、".join(_kun)) + "\n" if (_kun:=result["data"]["main_readings"]["kun"]) else ""
+            on_readings = "\n`On`\n" + ("、".join(_on)) + "\n" if (_on:=result["data"]["main_readings"]["on"]) else ""
             
             grade = result["data"]["meta"]["education"]["grade"]
             jlpt = result["data"]["meta"]["education"]["jlpt"]
             newspaper_rank = result["data"]["meta"]["education"]["newspaper_rank"]
             
-            entry += f"Kanji: {kanji}\nStrokes: {strokes}\nMain meanings: {main_meanings}\nKun-readings: {kun_readings}\nOn-readings: {on_readings}\nGrade: {grade}\nJLPT: {jlpt}\nNewspaper rank: {newspaper_rank}"
-            data.append(entry)
+            rad_alt_forms = "（" + (", ".join(_alt)) + "）" if (_alt:=result["data"]["radical"]["alt_forms"]) else ""
+            rad_meaning = result["data"]["radical"]["meaning"]
+            rad_parts = " `Parts`: " + (" ".join(_parts)) if (_parts:=result["data"]["radical"]["parts"]) else ""
+
+            rad_basis = result["data"]["radical"]["basis"]
+            rad_variants = " `Variants`: " + (" ".join(_variants)) if (_variants:=result["data"]["radical"]["variants"]) else ""
+            rad = f" `Radical`: {rad_meaning} {rad_basis}"
+
+            kun_examples = result["data"]["reading_examples"]["kun"]
+            on_examples = result["data"]["reading_examples"]["on"]
+
+            base = f"{kanji} `Strokes`: {strokes}\n{rad}{rad_alt_forms}{rad_parts}{rad_variants}\n`JLPT`: {jlpt}, `Taught in`: {grade}, `Newspaper rank`: {newspaper_rank}\n\n{main_meanings}\n{kun_readings}{on_readings}"
+
+            if kun_examples:
+                base += "\n`Kunyomi examples`"
+
+                for ex in kun_examples:
+                    word = ex["kanji"]
+                    reading = ex["reading"]
+                    meanings = ", ".join(ex["meanings"])
+                    base += f"\n**{word}【{reading}】**\n{meanings}"
+                
+                base += "\n"
+            
+            if on_examples:
+                base += "\n`Onyomi examples`"
+
+                for ex in on_examples:
+                    word = ex["kanji"]
+                    reading = ex["reading"]
+                    meanings = ", ".join(ex["meanings"])
+                    base += f"\n**{word}【{reading}】**\n{meanings}"
+            
+            if len(base) > 1015:
+                base = base[:1015]  + " [...]"
+
+            data.append(base)
             
         return data
     
@@ -324,17 +322,17 @@ class Jisho(commands.Cog):
             
         results = json.loads(request.json())
         data = []
-        entry = ""
+        base = ""
 
         for index, result in enumerate(results["data"], start=1):
             japanese = result["japanese"]
             en_translation = result["en_translation"]
-            entry += f"{index}. {japanese}\n{en_translation}\n\n"
+            base += f"{index}. {japanese}\n{en_translation}\n\n"
 
-        if len(entry) > 1015:
-            entry = entry[:1015]  + " [...]"
+        if len(base) > 1015:
+            base = base[:1015]  + " [...]"
 
-        data.append(entry)
+        data.append(base)
 
         return data
     
@@ -347,12 +345,15 @@ class Jisho(commands.Cog):
         
         results = json.loads(request.json())
         data = []
-        entry = ""
+        base = ""
         
         for token in results["data"]:
-            entry += f"{token['token']} {token['pos_tag']}\n"
+            base += f"{token['token']} {token['pos_tag']}\n"
+        
+        if len(base) > 1015:
+            base = base[:1015]  + " [...]"
             
-        data.append(entry)
+        data.append(base)
         
         return data
 

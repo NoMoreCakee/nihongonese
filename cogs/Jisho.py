@@ -289,7 +289,7 @@ class Jisho(commands.Cog):
             if kun_examples:
                 base += "\n`Kunyomi examples`"
 
-                for ex in kun_examples:
+                for ex in kun_examples[:3]:
                     word = ex["kanji"]
                     reading = ex["reading"]
                     meanings = ", ".join(ex["meanings"])
@@ -300,7 +300,7 @@ class Jisho(commands.Cog):
             if on_examples:
                 base += "\n`Onyomi examples`"
 
-                for ex in on_examples:
+                for ex in on_examples[:3]:
                     word = ex["kanji"]
                     reading = ex["reading"]
                     meanings = ", ".join(ex["meanings"])

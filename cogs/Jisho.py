@@ -357,22 +357,22 @@ class Jisho(commands.Cog):
         
         return data
 
-    @commands.command(aliases=["j", "J"])
+    @commands.hybrid_command(aliases=["j", "J"], description="Searches for Japanese words")
     async def jisho(self, ctx: commands.context, *, arg: str) -> None:
         page_view = PageView(ctx=ctx, arg=arg, data=self.word_search(arg))
         await page_view.send()
     
-    @commands.command(aliases=["k", "K"])
+    @commands.hybrid_command(aliases=["k", "K"], description="Searches for kanji")
     async def kanji(self, ctx: commands.context, *, arg: str) -> None:
         page_view = PageView(ctx=ctx, arg=arg, data=self.kanji_search(arg))
         await page_view.send()
     
-    @commands.command(aliases=["e", "E"])
+    @commands.hybrid_command(aliases=["e", "E"], description="Searches for Japanese example sentences")
     async def examples(self, ctx: commands.context, *, arg: str) -> None:
         page_view = PageView(ctx=ctx, arg=arg, data=self.examples_search(arg))
         await page_view.send()
     
-    @commands.command(aliases=["tn"])
+    @commands.hybrid_command(aliases=["tn"], description="Searches for tokens(parts) in a Japanese sentence")
     async def tokenize(self, ctx: commands.context, *, arg: str) -> None:
         page_view = PageView(ctx=ctx, arg=arg, data=self.token_search(arg))
         await page_view.send()

@@ -10,7 +10,7 @@ prefix = input("Enter a command prefix: ")
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-bot = commands.Bot(command_prefix=prefix, intents=intents)
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(prefix), intents=intents)
 
 WELCOME_CHANNEL = int(dotenv.get_key('.env', 'CHANNEL_ID'))
 

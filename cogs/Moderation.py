@@ -9,15 +9,14 @@ class Moderation(commands.Cog):
 
     @staticmethod
     def strip_id(user_id):
-        return user_id.strip("<@!") if user_id else None
+        return user_id.strip("<@!>") if user_id else None
 
     async def send_embed(self, ctx, title, description, color):
         await ctx.send(embed=Embed(title=title, description=description, color=color))
 
     async def perform_action(self, ctx, action, action_name, user_id, reason=None):
         if not getattr(ctx.author.guild_permissions, f"{action}_members", False):
-            return await self.send_embed(ctx, ":x: Error!", "You don't have permission to perform this action.",
-                                         Color.red())
+            return await self.send_embed(ctx, ":x: Error!", "You don't have permission to perform this action.", Color.red())
 
         if not user_id:
             return await self.send_embed(ctx, ":x: Error!", "Please provide a user ID or mention them.", Color.red())
@@ -36,13 +35,11 @@ class Moderation(commands.Cog):
             await self.send_embed(ctx, ":white_check_mark: Success!", success_msg, Color.green())
 
         except Forbidden:
-            await self.send_embed(ctx, ":x: Error!", f"I don't have permission to {action} this member.",
-                                  Color.red())
+            await self.send_embed(ctx, ":x: Error!", f"I don't have permission to {action} this member.", Color.red())
         except NotFound:
             await self.send_embed(ctx, ":x: Error!", "User not found or does not exist in the server.", Color.red())
         except HTTPException:
-            await self.send_embed(ctx, ":x: Error!", f"Failed to {action} the member. Possibly a server error.",
-                                  Color.red())
+            await self.send_embed(ctx, ":x: Error!", f"Failed to {action} the member. Possibly a server error.", Color.red())
 
     @commands.hybrid_command(name="hello", description="Checks bot connectivity.")
     async def hello(self, ctx: commands.Context):
@@ -68,15 +65,13 @@ class Moderation(commands.Cog):
     async def purge(self, ctx: commands.Context, amount: int):
         """Mass deletes up to 100 messages in current channel."""
         if not ctx.author.guild_permissions.manage_messages:
-            return await self.send_embed(ctx, ":x: Error!", "You don't have permission to perform this action.",
-                                         Color.red())
+            return await self.send_embed(ctx, ":x: Error!", "You don't have permission to perform this action.", Color.red())
 
         if not amount or amount > 100:
             return await self.send_embed(ctx, ":x: Error!", "Please provide a valid amount (1-100).", Color.red())
 
         await ctx.channel.purge(limit=amount)
-        msg = await self.send_embed(ctx, ":white_check_mark: Success!", f"Successfully deleted {amount} messages.",
-                                    Color.green())
+        msg = await self.send_embed(ctx, ":white_check_mark: Success!", f"Successfully deleted {amount} messages.", Color.green())
         time.sleep(3)
         await msg.delete()
 
